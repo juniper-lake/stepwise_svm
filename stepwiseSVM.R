@@ -102,6 +102,9 @@ packages <- list(CombMSC="https://cran.r-project.org/src/contrib/CombMSC_1.4.2.1
                  ggplot2="https://cran.r-project.org/src/contrib/ggplot2_3.3.5.tar.gz",
                  iterators="https://cran.r-project.org/src/contrib/iterators_1.0.13.tar.gz",
                  foreach="https://cran.r-project.org/src/contrib/foreach_1.5.1.tar.gz", 
+                 kernlab="https://cran.r-project.org/bin/macosx/contrib/4.1/kernlab_0.9-29.tgz",
+                 proxy="https://cran.r-project.org/src/contrib/proxy_0.4-26.tar.gz",
+                 e1071="https://cran.r-project.org/src/contrib/e1071_1.7-7.tar.gz",
                  ModelMetrics="https://cran.r-project.org/src/contrib/ModelMetrics_1.2.2.2.tar.gz",
                  gower="https://cran.r-project.org/src/contrib/gower_0.2.2.tar.gz",
                  SQUAREM="https://cran.r-project.org/src/contrib/SQUAREM_2021.1.tar.gz",
@@ -130,91 +133,92 @@ data_file <- args_list$inputFile
   
 data<-read.csv(data_file, header = T)
 
-# normal <-c()
-# for (i in 2:616){
-#   for (j in 1:246){
-#     if (is.nan(data[j,i]) == FALSE){
-#       data[j,i] <- log(data[j,i])
-#     }
-#   }
-# }
-# for (i in 2:616){
-#   vmean<-mean(data[,i], na.rm = TRUE)
-#   vstd <- sd(data[,i], na.rm = TRUE)
-#   data[,i]<-(data[,i]-vmean) / vstd
-# }
-# 
-# list <- c()
-# for (i in 2:616){
-#   if (sum(is.na(data[,i])) / 246 > 0.6){
-#     list <- c(list, i)
-#   }
-# }
-# data_pro <- data[, -list]
-# 
-# 
-# for (i in 2:length(data_pro)){
-#   vmin<-min(data_pro[, i], na.rm=TRUE)
-#   data_pro[is.na(data_pro[, i]),i]<-vmin
-# }
-# result<-data_pro
-# result$category <- as.factor(result$category)
+normal <-c()
+for (i in 2:616){
+  for (j in 1:246){
+    if (is.nan(data[j,i]) == FALSE){
+      data[j,i] <- log(data[j,i])
+    }
+  }
+}
+for (i in 2:616){
+  vmean<-mean(data[,i], na.rm = TRUE)
+  vstd <- sd(data[,i], na.rm = TRUE)
+  data[,i]<-(data[,i]-vmean) / vstd
+}
+
+list <- c()
+for (i in 2:616){
+  if (sum(is.na(data[,i])) / 246 > 0.6){
+    list <- c(list, i)
+  }
+}
+data_pro <- data[, -list]
 
 
-# ##########################################################
-# # leave one out###########################################
-# train.control2 <- trainControl(method = "LOOCV",
-#                                search = "grid")
-# 
-# 
-# ##########################################################
-# ## stepwise SVM algorithm ################################
-# 
-# comb <- c()
-# result.train1 <- result
-# y_train <- result$category
-# avg_bar <- 0
-# accuracy_bar <- 0
-# record <- c()
-# selected <- c()
-# 
-# for (i in 1:100){
-#   len <- length(subsets(dim(result.train1)[2]-1,1,colnames(result.train1[,!(colnames(result.train1) == "category")])))
-#   for (j in 1:len){
-#     set <- result[c(selected, subsets(dim(result.train1)[2]-1,1,colnames(result.train1[,!(colnames(result.train1) == "category")]))[j,])]
-#     fit.svml <- train(set,
-#                       y_train,
-#                       method = "svmLinear",
-#                       tuneGrid = expand.grid(C = 0.1),
-#                       trControl = train.control2)
-#     avg <- mean(fit.svml$results$Accuracy)
-#     #acc <- c(acc, avg)
-#     
-#     if (avg > avg_bar){
-#       comb <- c(i, j, avg)
-#       avg_bar <- avg
-#     }
-#   }
-#   select_var <- subsets(dim(result.train1)[2]-1,1,colnames(result.train1[,!(colnames(result.train1) == "category")]))[comb[2],]
-#   selected <- c(selected, select_var) # append variables
-#   record <- rbind(record, c("+", select_var, avg_bar)) # add selected variable into our record
-#   for (k in 1: length(record[,1])){
-#     set1 <- as.data.frame(set[, -k])
-#     fit.svml <- train(set1,
-#                       y_train,
-#                       method = "svmLinear",
-#                       tuneGrid = expand.grid(C = 0.1),
-#                       trControl = train.control2)
-#     avg <- mean(fit.svml$results$Accuracy)
-#     if (avg > avg_bar){
-#       avg_bar <- avg
-#       record <- rbind(record, c("-", selected[k], avg_bar)) # remove selected variable out of our record
-#       result.train1[selected[k]]<-result[selected[k]]
-#     }
-#   }
-#   result.train1 <- result.train1[,!(colnames(result.train1)==select_var)] # re-adjust the dataset dim
-#   if (i!=1 && avg_bar <= accuracy_bar){
-#     break
-#   }
-#   accuracy_bar <- avg_bar
-# }
+for (i in 2:length(data_pro)){
+  vmin<-min(data_pro[, i], na.rm=TRUE)
+  data_pro[is.na(data_pro[, i]),i]<-vmin
+}
+result<-data_pro
+result$category <- as.factor(result$category)
+
+
+##########################################################
+# leave one out###########################################
+train.control2 <- trainControl(method = "LOOCV",
+                               search = "grid")
+
+
+##########################################################
+## stepwise SVM algorithm ################################
+
+comb <- c()
+result.train1 <- result
+y_train <- result$category
+avg_bar <- 0
+accuracy_bar <- 0
+record <- c()
+selected <- c()
+
+for (i in 1:100){
+  cat("Iteration number: ", i)
+  len <- length(subsets(dim(result.train1)[2]-1,1,colnames(result.train1[,!(colnames(result.train1) == "category")])))
+  for (j in 1:len){
+    set <- result[c(selected, subsets(dim(result.train1)[2]-1,1,colnames(result.train1[,!(colnames(result.train1) == "category")]))[j,])]
+    fit.svml <- train(set,
+                      y_train,
+                      method = "svmLinear",
+                      tuneGrid = expand.grid(C = 0.1),
+                      trControl = train.control2)
+    avg <- mean(fit.svml$results$Accuracy)
+    #acc <- c(acc, avg)
+
+    if (avg > avg_bar){
+      comb <- c(i, j, avg)
+      avg_bar <- avg
+    }
+  }
+  select_var <- subsets(dim(result.train1)[2]-1,1,colnames(result.train1[,!(colnames(result.train1) == "category")]))[comb[2],]
+  selected <- c(selected, select_var) # append variables
+  record <- rbind(record, c("+", select_var, avg_bar)) # add selected variable into our record
+  for (k in 1: length(record[,1])){
+    set1 <- as.data.frame(set[, -k])
+    fit.svml <- train(set1,
+                      y_train,
+                      method = "svmLinear",
+                      tuneGrid = expand.grid(C = 0.1),
+                      trControl = train.control2)
+    avg <- mean(fit.svml$results$Accuracy)
+    if (avg > avg_bar){
+      avg_bar <- avg
+      record <- rbind(record, c("-", selected[k], avg_bar)) # remove selected variable out of our record
+      result.train1[selected[k]]<-result[selected[k]]
+    }
+  }
+  result.train1 <- result.train1[,!(colnames(result.train1)==select_var)] # re-adjust the dataset dim
+  if (i!=1 && avg_bar <= accuracy_bar){
+    break
+  }
+  accuracy_bar <- avg_bar
+}
