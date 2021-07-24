@@ -291,8 +291,6 @@ for (i in 1:max_iterations){
   record <- rbind(record, c("+", select_var, avg_bar)) # add selected variable into our record
 
   # Backward feature selection (check if removing any features from model will improve accuracy)
-  # WARNING: I'm not confident that this loop would ever actually remove variables from the model. I don't know if the removal criteria
-  # is adequate and I also feel like there should be a line after the `if (avg > avg_bar)` clause along the lines of `selected <- selected[-k]`
   for (k in 1: length(record[,1])){
     set1 <- as.data.frame(set[, -k])
     fit.svml <- train(set1,
@@ -307,6 +305,7 @@ for (i in 1:max_iterations){
       cat(c("- ", selected[k], " | Mean Accuracy: ", avg_bar,"\n"), file = out_file, append = T)
       record <- rbind(record, c("-", selected[k], avg_bar)) # remove selected variable out of our record
       result.train1[selected[k]]<-data[selected[k]]
+      selected <- selected[-k]
     }
   }
   
